@@ -1,0 +1,150 @@
+<template>
+<div class="wrap">
+  <mt-header class="header">
+    <mt-button slot="left" icon="back" @click="leaveRoom">离开房间</mt-button>
+    <mt-button slot="right" >{{roomId+1}}号桌</mt-button>
+  </mt-header>
+  <div class="container">
+    <div class="player-waiting">
+      <ul class="player-list clearfix">
+        <li v-for="(user,index) in userList" :key="user.uid" ><player-item :user="user" :class="{master: index === 0, me: me.uid === user.uid}"></player-item></li>
+        <li class="empty-item" v-for="empty in playerNumber - userList.length"></li>
+      </ul>
+      <div class="begin" v-if="isRoomMaster">
+        <mt-button size="large" type="primary" :disabled="!canBegin" @click="beginGame">{{canBegin ? '开始游戏' : '至少两人才能开始'}}</mt-button>
+      </div>
+    </div>
+    <div class="chat-area">
+      <chat showList="1"></chat>
+    </div>
+  </div>
+</div>
+</template>
+<!-- 进入房间后自动坐下，房主可开始游戏 -->
+<script>
+import PlayerItem from './PlayerItem'
+import Chat from '../play/chat'
+import { MessageBox } from 'mint-ui'
+export default {
+  components: { Chat, PlayerItem },
+  beforeRouteEnter (to, from, next) {
+    const roomId = to.params.id
+    next(vm => {
+      vm.loading()
+      vm.$store.state.pomelo.request('connector.entryHandler.joinRoom',{
+        userInfo:vm.$store.state.userInfo,
+        rid:roomId
+      },
+      data => {
+        console.log(data)
+        vm.loaded()
+        if(data.code == 500){
+          MessageBox('提示',data.msg)
+          vm.$router.push('/roomlist')
+        }
+        vm.roomId = +roomId
+        vm.userList = data.userList
+      })
+    })
+  },
+  beforeRouteLeave (to, from, next) {
+    this.$store.state.pomelo.notify('connector.entryHandler.leaveRoom')
+    next()
+  },
+  data () {
+    return {
+      socketEvents: {
+        onRoomAdd ({user}) {
+          this.refreshUser(user)
+        },
+        gameBegin ({id}) {
+          this.$router.replace({name: 'begin', params: {id: id}})
+        },
+        onRoomLeave ({user}) {
+          this.userLeave(user.uid)
+        }
+      },
+      roomId: null,
+      userList: [],
+      playerNumber: this.$store.state.maxRoomPlayers
+    }
+  },
+  computed: {
+    me () {
+      return this.$store.state.userInfo
+    },
+    isRoomMaster () {
+      const userId = this.me.uid
+      const firstUser = this.userList[0]
+      return firstUser && (firstUser.uid === userId)
+    },
+    emptyNum () {
+      return this.playerNumber - this.userList.length
+    },
+    canBegin () {
+      return this.userList.length > 1
+    }
+  },
+  methods: {
+    beginGame () {
+      this.$webSocket.send(null, 'beginGame')
+    },
+    refreshUser (user) {
+      this.userList.push(user)
+    },
+    userLeave (uid) {
+      let index = this.userList.findIndex(u => u.uid == uid)
+      this.userList.splice(index,1)
+    },
+    leaveRoom () {
+      this.$router.push('/roomlist')
+    }
+  }
+}
+</script>
+
+<style lang="less" scoped>
+@import "../../assets/less/base.less";
+.wrap{
+  padding-top: 40px;
+  height: 100%;
+}
+.header{
+  position:absolute;
+  width:100%;
+  left: 0;
+  top:0;
+}
+.container{
+  height: 100%;
+  padding-right: 400px;
+  position: relative;
+}
+.player-waiting{
+  position: absolute;
+  right: 0;
+  top:0;
+  width: 400px;
+  height: 100%;
+  text-align: center;
+}
+.player-list{
+  li{
+    float: left;
+    width: 29.3%;
+    margin:2%;
+    height: 115px;
+    border: 1px #7dc7ff solid;
+  }
+  .empty-item{
+    background: #eee;
+  }
+}
+.begin{
+  width: 200px;
+  margin: auto;
+}
+.chat-area{
+  height: 100%; 
+}
+</style>
