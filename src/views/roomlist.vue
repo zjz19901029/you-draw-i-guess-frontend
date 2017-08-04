@@ -1,8 +1,8 @@
 <template>
   <div class="index">
-    <mt-header title="你画我猜-游戏大厅">
-      <mt-button slot="left"><userAvatar :userInfo="userInfo" slot="icon"></userAvatar></mt-button>
-      <span slot='right'>当前在线人数{{onlineUser}}</span>
+    <mt-header :title="title">
+      <mt-button slot="left" @click="leaveServer">返回</mt-button>
+      <mt-button slot="right"><userAvatar :userInfo="userInfo" slot="icon"></userAvatar></mt-button>
     </mt-header>
     <ul class="room-list">
       <li class="room" v-for="(room,roomId) in roomList" :class="{'playing':room.state==1}">
@@ -18,7 +18,6 @@
 </template>
 <script>
 import userAvatar from '../components/userAvatar'
-import { MessageBox } from 'mint-ui'
 export default {
   components:{userAvatar},
   data () {
@@ -43,27 +42,20 @@ export default {
     },
     onlineUser () {
       return this.userList.length
+    },
+    title () {
+      return `你画我猜-${this.$store.state.selectedServer.name}-游戏大厅(${this.onlineUser}人)`
     }
   },
   methods: {
+    leaveServer () {
+      this.$router.replace({path:'/'})
+    },
     joinRoom (roomId) {
       if(this.roomList[roomId].state == 1){
         return
       }
-      this.$router.push(`room/${roomId}`)
-      /*this.$store.state.pomelo.request('connector.entryHandler.joinRoom',
-        {
-          userInfo:this.$store.state.userInfo,
-          rid:roomId
-        },
-        data => {
-          console.log(data)
-          if(data.code == 500){
-            this.$message(data.msg)
-          } else {
-            this.$router.push('room')
-          }
-      })*/
+      this.$router.replace({path:`room/${roomId}`})
     },
     loadRoomList () {
       this.$store.state.pomelo.request('connector.entryHandler.getServerInfo',this.$store.state.userInfo,

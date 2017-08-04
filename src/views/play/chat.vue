@@ -1,7 +1,7 @@
 <template>
 <div class="chat-input">
   <div class="msg-list" v-if="showList">
-    <p v-for="m in msgList" :class="m.type">{{m.msg}}</p>
+    <p v-for="m in msgList" :class="{self:m.from.uid == userInfo.uid}">{{m.from.username}}说: {{m.msg}}</p>
   </div>
   <form @submit.prevent="sendMsg">
     <div class="input-group">
@@ -19,26 +19,37 @@ export default {
     return {
       msg: '',
       msgList: [],
+      userInfo: this.$store.state.userInfo,
       socketEvents: {
-        receiveMsg (data) {
+        onChat (data) {
           this.$emit('receive', data)
-          this.msgList.unshift(data)
-          this.msgList.splice(4, this.msgList.length) // 只显示最新的 4 条消息
+          this.msgList.push(data)
         }
       }
     }
   },
   methods: {
     send (msg) {
-      this.$store.state.pomelo.request('room.roomHandler.send',msg)
+      this.$store.state.pomelo.request('room.roomHandler.send',
+        {content:msg, target:'*'},
+        data => {
+          this.msg = ''
+        })
     },
     sendMsg () {
       if (this.msg) {
         this.send(this.msg)
-        this.msg = ''
       }
     }
-  }
+  },
+  watch: {
+   msgList() {
+     this.$nextTick(() => {
+       const container = this.$el.querySelector(".msg-list")
+       container.scrollTop = container.scrollHeight
+     })
+   }
+ }
 }
 </script>
 
@@ -82,8 +93,15 @@ form{
   overflow: hidden;
   overflow-y: auto;
   background: @white;
+  padding-bottom: 30px;
   p{
-    margin: .6em .8em;
+    margin: 4px 4px;
+    text-align: left;
+    font-size: 14px;
+    word-break: break-all;
+    &.self{
+      color:#eb6325;
+    }
   }
 }
 </style>

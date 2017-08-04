@@ -2,7 +2,7 @@
 <div class="wrap">
   <mt-header class="header">
     <mt-button slot="left" icon="back" @click="leaveRoom">离开房间</mt-button>
-    <mt-button slot="right" >{{roomId+1}}号桌</mt-button>
+    <mt-button slot="right" >{{serverName}}-{{roomId+1}}号桌</mt-button>
   </mt-header>
   <div class="container">
     <div class="player-waiting">
@@ -24,7 +24,6 @@
 <script>
 import PlayerItem from './PlayerItem'
 import Chat from '../play/chat'
-import { MessageBox } from 'mint-ui'
 export default {
   components: { Chat, PlayerItem },
   beforeRouteEnter (to, from, next) {
@@ -36,11 +35,10 @@ export default {
         rid:roomId
       },
       data => {
-        console.log(data)
         vm.loaded()
         if(data.code == 500){
-          MessageBox('提示',data.msg)
-          vm.$router.push('/roomlist')
+          vm.$message(data.msg)
+          this.$router.replace({name:'roomlist'})
         }
         vm.roomId = +roomId
         vm.userList = data.userList
@@ -54,17 +52,18 @@ export default {
   data () {
     return {
       socketEvents: {
-        onRoomAdd ({user}) {
+        onAdd ({user}) {
           this.refreshUser(user)
         },
         gameBegin ({id}) {
           this.$router.replace({name: 'begin', params: {id: id}})
         },
-        onRoomLeave ({user}) {
+        onLeave ({user}) {
           this.userLeave(user.uid)
         }
       },
       roomId: null,
+      serverName: this.$store.state.selectedServer.name,
       userList: [],
       playerNumber: this.$store.state.maxRoomPlayers
     }
@@ -97,7 +96,7 @@ export default {
       this.userList.splice(index,1)
     },
     leaveRoom () {
-      this.$router.push('/roomlist')
+      this.$router.replace({name:'roomlist'})
     }
   }
 }

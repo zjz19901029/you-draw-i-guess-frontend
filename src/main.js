@@ -22,6 +22,14 @@ Vue.prototype.loading = text => {
 Vue.prototype.loaded = _ => {
 	Vue.nextTick(_ => MintUI.Indicator.close())
 }
+Vue.prototype.$messageBox = MintUI.MessageBox
+
+Vue.prototype.$message = (message, time = message.length / 4 * 1000) => {
+  return MintUI.Toast({
+    message: message,
+    duration: time
+  })
+}
 
 router.beforeEach((to, from, next) => {
 	if (to.path != "/"&&!store.state.userInfo) {
@@ -40,22 +48,13 @@ Vue.mixin({
 			})
 		}
 	},
-	/*beforeDestory() {
-		const events = this.socketEvents
-		if (events) {
-			Object.keys(events).forEach(k => {
-				store.state.pomelo.removeListener(k, events[k].bind(this))
-			})
-		}
-	},*/
-	beforeRouteLeave(to,from,next) {
+	beforeDestroy() {
 		const events = this.socketEvents
 		if (events) {
 			Object.keys(events).forEach(k => {
 				store.state.pomelo.removeAllListeners(k)
 			})
 		}
-		next()
 	}
 })
 
@@ -76,7 +75,3 @@ new Vue({
 		}
 	})
 })*/
-
-document.addEventListener('touchmove', e => {
-  e.preventDefault()
-}, false)

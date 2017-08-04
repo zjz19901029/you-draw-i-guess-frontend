@@ -42,10 +42,10 @@ export default {
           data.serversInfo.forEach((s)=>{
             s.selected = false
           })
-          data.serversInfo.sort((a,b) => {
-            let aId = +a.id.split("-")[2]
-            let bId = +b.id.split("-")[2]
-            return aId>bId
+          let sortarr = data.serversInfo.sort((a,b) => {
+            let aId = parseInt(a.id.split("-")[2])
+            let bId = parseInt(b.id.split("-")[2])
+            return aId-bId
           })
           data.serversInfo[0].selected = true
           this.servers = data.serversInfo
@@ -76,12 +76,13 @@ export default {
         callback: () => {
           this.$store.state.pomelo.request('connector.entryHandler.enterServer',this.$store.state.userInfo,
             data => {
-              console.log(data)
-              if(data.code == 500){
-                MessageBox('提示',data.msg)
-              }
-              this.$router.push('roomlist')
               this.loaded()
+              if(data.code == 500){
+                this.$message(data.msg)
+                return
+              }
+              this.$store.commit("setSelectedServer",this.selectedServer)
+              this.$router.replace({name:'roomlist'})
           })
         }
       })

@@ -6,8 +6,9 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     userInfo: null,
+    selectedServer:null,
     serverInfo: {
-      host: '127.0.0.1',
+      host: '10.100.33.129',
       id: '',
       port: 3010
     },
@@ -31,6 +32,9 @@ export default new Vuex.Store({
     },
     setServerInfo (state, param) {
       state.serverInfo = Object.assign({},state.serverInfo,param)
+    },
+    setSelectedServer (state, param) {
+      state.selectedServer = Object.assign({},state.selectedServer,param)
     }
   },
   actions: {
