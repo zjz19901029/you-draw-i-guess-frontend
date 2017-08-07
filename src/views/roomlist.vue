@@ -26,7 +26,8 @@ export default {
         onServerAdd: this.userEnter,
         onServerLeave: this.userLeave,
         onRoomAdd: this.updateRoomAdd,
-        onRoomLeave: this.updateRoomLeave
+        onRoomLeave: this.updateRoomLeave,
+        onRoomStart: this.updateRoomStart
       },
       roomList: [],
       userList: [],
@@ -83,6 +84,11 @@ export default {
       if(this.roomList[data.roomId]){
         let index = this.roomList[data.roomId].players.findIndex(p => p.uid == data.user.uid)
         this.roomList[data.roomId].players.splice(index,1)
+      }
+    },
+    updateRoomStart (data) {
+      if(this.roomList[data.roomId]){
+        this.roomList[data.roomId].state = 1
       }
     },
     refresh () {

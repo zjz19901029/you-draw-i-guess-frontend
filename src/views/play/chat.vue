@@ -30,7 +30,7 @@ export default {
   },
   methods: {
     send (msg) {
-      this.$store.state.pomelo.request('room.roomHandler.send',
+      this.$store.state.pomelo.request('room.roomHandler.sendMsg',
         {content:msg, target:'*'},
         data => {
           this.msg = ''
@@ -57,20 +57,20 @@ export default {
 @import "../../assets/less/base.less";
 .input-group{
   @children-height: 40px;
-  display: flex;
   align-items: center;
   background: @white;
   border: @main-color solid 1px;
   input{
-    flex: 1;
     border: 0;
     margin: 0;
     height: @children-height;
     padding: 0px 15px;
+    width: 100%;
     font-size: 14px;
   }
   button{
     border-radius: 0;
+    width: 100%;
     letter-spacing: 4px;
     font-size: 14px;
     height: @children-height;
@@ -85,7 +85,7 @@ form{
 .chat-input{
   height: 100%;
   position: relative;
-  padding-bottom: 40px;
+  padding-bottom: 80px;
   border-right: @main-color solid 1px;
 }
 .msg-list{

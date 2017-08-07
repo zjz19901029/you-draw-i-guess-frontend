@@ -1,9 +1,13 @@
 <template>
 <div class="game-begin">
-  <mt-header>
-    <div slot="left">{{isCurrentPlay ? '请画: ' : '提示: '}} {{gameData.key}} {{typeName}}</div>
-    <div slot="right">{{countTime}}</div>
-  </mt-header>
+  <header>
+    <div class="tips">
+      {{tip}}
+    </div>
+    <div class="time">
+      {{countTime}}
+    </div>
+  </header>
   <draw :can-draw="isCurrentPlay" :image-data="gameData.imageData" ref="draw">
     <div class="fiexd-msg-list" slot="ondraw" ref="msgScroll" :style="{opacity:messageListShow ? 1 : 0}">
       <div class="msg-auto-scroll">
@@ -13,10 +17,10 @@
       </div>
     </div>
   </draw>
-  <chat @receive="showMessage" v-show="!isCurrentPlay" ref="chat">
+  <div v-show="!isCurrentPlay">
     <div class="player-list-wrap">
-      <div class="player-list" :style="{width:users && users.length * 25 + '%'}">
-        <player-item v-for="user in users" :user="user" :class="{me: user.id === currentUser, draw: user.id === currentPlay, leave: isOffline(user.id)}"></player-item>
+      <div class="player-list" :style="{width:players && players.length * 25 + '%'}">
+        <player-item v-for="user in players" :user="user" :class="{me: user.uid === me, draw: user.id === currentPlayer, leave: isOffline(user.id)}"></player-item>
       </div>
     </div>
     <mt-popup v-model="isShowAnswerCard">
@@ -40,51 +44,47 @@
             第{{index+1}}名: {{u.username}} {{u.score}}分
           </p>
         </div>
-        <mt-button size="large" type="primary" @click="goBackToRoom">返回房间</mt-button>
       </div>
     </mt-popup>
-  </chat>
+  </div>
 </div>
 </template>
 
 <script>
 import Draw from './draw'
-import Chat from './chat'
 import PlayerItem from '../room/PlayerItem'
 export default {
-  components: { Draw, Chat, PlayerItem },
-  beforeRouteEnter (to, from, next) {
-    next(vm => {
-      vm.getGameData()
-    })
-  },
+  components: { Draw, PlayerItem },
   beforeRouteLeave (to, from, next) {
     this.stopAutoScroll()
     next()
   },
+  created () {
+    this.getGameData()
+  },
   data () {
     return {
       socketEvents: {
-        timeout (time) {
-          this.countTime = time
+        onTimeout (data) {
+          this.countTime = data.time
         },
-        typeHints (type) {
-          this.typeName = type
+        onAnswerType (data) {
+          this.typeName = data.type
         },
         countScore (userScore) {
-          const users = this.gameData.users
-          if (users) {
-            users.forEach(u => {
+          const players = this.gameData.players
+          if (players) {
+            players.forEach(u => {
               u.score = userScore[u.id] || u.score
             })
           }
         },
         thisOver (data) {
-          this.currentAnswer = data.key
+          this.currentAnswer = data.answer.word
           this.isShowAnswerCard = true
           this.gameData.player = ''
         },
-        changeGamer () {
+        changeGamer (data) {
           this.isShowAnswerCard = false
           this.typeName = ''
           this.gameData.imageData = ''
@@ -101,7 +101,7 @@ export default {
         gameOver (data) {
           this.isShowAnswerCard = false
           this.isShowGameOver = true
-          this.gameOverData = this.gameData.users.sort((u1, u2) => {
+          this.gameOverData = this.gameData.players.sort((u1, u2) => {
             return u1.score < u2.score
           })
         }
@@ -131,13 +131,13 @@ export default {
     }
   },
   watch: {
-    currentPlay (val) {
+    currentPlayer (val) {
       if (this.isCurrentPlay) {
         this.$message('你来画')
       } else {
-        this.users.every(u => {
-          if (u.id === this.currentPlay) {
-            this.$message(u.username + '作画')
+        this.players.every(u => {
+          if (u.uid === this.currentPlayer) {
+            this.$message(u.name + '作画')
             return false
           }
           return true
@@ -146,18 +146,24 @@ export default {
     }
   },
   computed: {
-    users () {
-      const users = this.gameData.users
-      return users
+    players () {
+      return this.gameData.players
     },
-    currentUser () {
-      return this.$store.getters.user.id
+    me () {
+      return this.$store.state.userInfo.uid
     },
-    currentPlay () {
-      return this.gameData.player
+    currentPlayer () {
+      return this.gameData.players?this.gameData.players[this.gameData.currentPlayer].uid:""
     },
     isCurrentPlay () {
-      return this.currentUser === this.currentPlay
+      return this.me === this.currentPlayer
+    },
+    tip () {
+      if(this.isCurrentPlay){
+        return "请画:" + this.gameData.answer.word
+      }else{
+        return "提示:" + this.gameData.answer.word.length + "个字  " + this.typeName
+      }
     }
   },
   methods: {
@@ -171,23 +177,13 @@ export default {
       this.$refs.chat.send(msg)
     },
     getGameData () {
-      const vm = this
-      vm.loading()
-      vm.$webSocket.request({id: parseInt(this.$route.params.id)}, 'gameData').then((gameData) => {
-        vm.gameData = gameData
-        vm.countTime = gameData.time
-        vm.loaded()
-      }).catch(e => {
-        if (e.type === 'gameOver') {
-          this.goBackToRoom()
-        } else {
-          vm.$router.replace('/')
-        }
-        vm.loaded()
+      this.loading()
+      this.$store.state.pomelo.request('connector.entryHandler.getGameData',(data) => {
+        this.gameData = data.gameData
+        this.countTime = data.gameData.time
+        console.log(gameData)
+        this.loaded()
       })
-    },
-    goBackToRoom () {
-      this.$router.replace({name: 'room', params: this.$route.params})
     },
     startAutoScroll () {
       this.messageListShow = true

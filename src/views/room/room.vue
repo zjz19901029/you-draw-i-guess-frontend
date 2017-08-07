@@ -1,18 +1,21 @@
 <template>
 <div class="wrap">
-  <mt-header class="header">
+  <mt-header class="header" i="header">
     <mt-button slot="left" icon="back" @click="leaveRoom">离开房间</mt-button>
     <mt-button slot="right" >{{serverName}}-{{roomId+1}}号桌</mt-button>
   </mt-header>
-  <div class="container">
-    <div class="player-waiting">
+  <div class="container" :style="{paddingRight:containerPad+'px'}">
+    <div class="player-waiting" v-show="!isBegin">
       <ul class="player-list clearfix">
         <li v-for="(user,index) in userList" :key="user.uid" ><player-item :user="user" :class="{master: index === 0, me: me.uid === user.uid}"></player-item></li>
         <li class="empty-item" v-for="empty in playerNumber - userList.length"></li>
       </ul>
-      <div class="begin" v-if="isRoomMaster">
+      <div class="begin-btn" v-if="isRoomMaster">
         <mt-button size="large" type="primary" :disabled="!canBegin" @click="beginGame">{{canBegin ? '开始游戏' : '至少两人才能开始'}}</mt-button>
       </div>
+    </div>
+    <div class="player-begin" :style="{width:containerPad+'px'}" v-if="isBegin">
+      <begin></begin>
     </div>
     <div class="chat-area">
       <chat showList="1"></chat>
@@ -24,8 +27,9 @@
 <script>
 import PlayerItem from './PlayerItem'
 import Chat from '../play/chat'
+import Begin from '../play/begin'
 export default {
-  components: { Chat, PlayerItem },
+  components: { Chat, PlayerItem ,Begin},
   beforeRouteEnter (to, from, next) {
     const roomId = to.params.id
     next(vm => {
@@ -55,13 +59,14 @@ export default {
         onAdd ({user}) {
           this.refreshUser(user)
         },
-        gameBegin ({id}) {
-          this.$router.replace({name: 'begin', params: {id: id}})
+        onGameBegin ({id}) {
+          this.isBegin = true
         },
         onLeave ({user}) {
           this.userLeave(user.uid)
         }
       },
+      isBegin:false,
       roomId: null,
       serverName: this.$store.state.selectedServer.name,
       userList: [],
@@ -82,11 +87,19 @@ export default {
     },
     canBegin () {
       return this.userList.length > 1
+    },
+    containerPad () {
+      if(this.isBegin){
+        let drawAreaHeight = window.innerHeight - 40;
+        let drawAreaWidth = drawAreaHeight*1.4;
+        return drawAreaWidth
+      }
+      return 400
     }
   },
   methods: {
     beginGame () {
-      this.$webSocket.send(null, 'beginGame')
+      this.$store.state.pomelo.notify('connector.entryHandler.beginGame')
     },
     refreshUser (user) {
       this.userList.push(user)
@@ -118,8 +131,9 @@ export default {
   height: 100%;
   padding-right: 400px;
   position: relative;
+  transition: all .5s;
 }
-.player-waiting{
+.player-waiting,.player-begin{
   position: absolute;
   right: 0;
   top:0;
@@ -139,7 +153,7 @@ export default {
     background: #eee;
   }
 }
-.begin{
+.begin-btn{
   width: 200px;
   margin: auto;
 }
