@@ -17,44 +17,36 @@
       </div>
     </div>
   </draw>
-  <div v-show="!isCurrentPlay">
-    <div class="player-list-wrap">
-      <div class="player-list" :style="{width:players && players.length * 25 + '%'}">
-        <player-item v-for="user in players" :user="user" :class="{me: user.uid === me, draw: user.id === currentPlayer, leave: isOffline(user.id)}"></player-item>
+  <div class="player-list">
+    <player-list :players="players" :currentPlayer="currentPlayer"></player-list>
+  </div>
+  <mt-popup v-model="isShowAnswerCard">
+    <div class="answer-card">
+      <div>
+        <span>答案是:</span>
+        <span class="answer">
+          {{this.currentAnswer}}
+        </span>
       </div>
     </div>
-    <mt-popup v-model="isShowAnswerCard">
-      <div class="answer-card" @click="hideAnswerCart">
-        <div>
-          <span>答案是:</span>
-          <span class="answer">
-            {{this.currentAnswer}}
-          </span>
-        </div>
-        <div class="quick-send">
-          点击快捷发送:
-          <p v-for="msg in quickSend" @click="sendMsg(msg)">{{msg}}</p>
-        </div>
+  </mt-popup>
+  <mt-popup v-model="isShowGameOver">
+    <div class="answer-card">
+      <div class="quick-send">
+        <p v-for="u,index in gameOverData">
+          第{{index+1}}名: {{u.username}} {{u.score}}分
+        </p>
       </div>
-    </mt-popup>
-    <mt-popup v-model="isShowGameOver">
-      <div class="answer-card">
-        <div class="quick-send">
-          <p v-for="u,index in gameOverData">
-            第{{index+1}}名: {{u.username}} {{u.score}}分
-          </p>
-        </div>
-      </div>
-    </mt-popup>
-  </div>
+    </div>
+  </mt-popup>
 </div>
 </template>
 
 <script>
 import Draw from './draw'
-import PlayerItem from '../room/PlayerItem'
+import PlayerList from './playerList'
 export default {
-  components: { Draw, PlayerItem },
+  components: { Draw, PlayerList },
   beforeRouteLeave (to, from, next) {
     this.stopAutoScroll()
     next()
@@ -79,42 +71,30 @@ export default {
             })
           }
         },
-        thisOver (data) {
-          this.currentAnswer = data.answer.word
+        onThisOver (data) {
+          console.log(data)
+          this.currentAnswer = data.gameData.answer.word
           this.isShowAnswerCard = true
-          this.gameData.player = ''
         },
-        changeGamer (data) {
+        onChangeGamer (data) {
+          console.log(data)
           this.isShowAnswerCard = false
           this.typeName = ''
           this.gameData.imageData = ''
+          this.$refs.draw.clear()
           this.getGameData()
         },
-        userOffline ({id}) {
-          this.offlineUser[id] = 1
-          this.offlineUser = {...this.offlineUser}
-        },
-        userOnline ({id}) {
-          delete this.offlineUser[id]
-          this.offlineUser = {...this.offlineUser}
-        },
-        gameOver (data) {
+        onGameOver (data) {
           this.isShowAnswerCard = false
           this.isShowGameOver = true
           this.gameOverData = this.gameData.players.sort((u1, u2) => {
             return u1.score < u2.score
           })
+          setTimeout(() => {
+            this.$emit('game-over')
+          },5000)
         }
       },
-      quickSend: [
-        '666666666',
-        '哈哈哈哈哈',
-        '这画的什么鬼',
-        '???????????',
-        '简直无法直视',
-        '你的画工和颜值成正比',
-        '.................'
-      ],
       isShowGameOver: false,
       isShowAnswerCard: false,
       offlineUser: {},
@@ -147,7 +127,7 @@ export default {
   },
   computed: {
     players () {
-      return this.gameData.players
+      return this.gameData.players||[]
     },
     me () {
       return this.$store.state.userInfo.uid
@@ -159,65 +139,73 @@ export default {
       return this.me === this.currentPlayer
     },
     tip () {
-      if(this.isCurrentPlay){
-        return "请画:" + this.gameData.answer.word
-      }else{
-        return "提示:" + this.gameData.answer.word.length + "个字  " + this.typeName
+      if(this.gameData.answer){
+        if(this.isCurrentPlay){
+          return "请画:" + this.gameData.answer.word
+        }else{
+          return "提示:" + this.gameData.answer.word.length + "个字  " + this.typeName
+        }
       }
     }
   },
   methods: {
-    isOffline (id) {
-      return this.offlineUser[id]
+    userOffline (uid) {
+      this.players.forEach(p => {
+        if(p.uid == uid){
+          p.isOffline = true
+        }
+      })
     },
     hideAnswerCart () {
       this.isShowAnswerCard = false
     },
-    sendMsg (msg) {
-      this.$refs.chat.send(msg)
-    },
     getGameData () {
       this.loading()
       this.$store.state.pomelo.request('connector.entryHandler.getGameData',(data) => {
+        if(data.code == 500){
+          this.$message(data.msg)
+          return
+        }
+        console.log(data)
         this.gameData = data.gameData
         this.countTime = data.gameData.time
-        console.log(gameData)
         this.loaded()
       })
-    },
-    startAutoScroll () {
-      this.messageListShow = true
-      if (this.scrollInterval) {
-        clearInterval(this.scrollInterval)
-      }
-      this.scrollInterval = setInterval(_ => {
-        try {
-          this.$refs.msgScroll.scrollLeft++
-          if (this.$refs.msgScroll.scrollLeft >= this.$refs.msgList.clientWidth + this.$refs.msgScroll.clientWidth) {
-            this.stopAutoScroll()
-          }
-        } catch (e) {
-          console.error(e)
-          this.stopAutoScroll()
-        }
-      }, this.speed)
-    },
-    stopAutoScroll () {
-      this.messageListShow = false
-      clearInterval(this.scrollInterval)
-      this.$refs.msgScroll.scrollLeft = 0
-      this.msgList = []
-    },
-    showMessage (msg) {
-      this.msgList.push(msg)
-      this.startAutoScroll()
     }
   }
 }
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 @import "../../assets/less/base.less";
+.game-begin{
+  height: 100%;
+}
+header{
+  height: 30px;
+  line-height: 30px;
+  position: absolute;
+  width: 100%;
+  top:0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+  text-align: left;
+  padding-left: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  .tips{
+    font-size:15px;
+  }
+  .time{
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #ec5500;
+    font-size: 22px;
+    width: 40px;
+    text-align: center;
+  }
+}
 .answer-card{
   width: 100vw;
   padding: 2vw;
@@ -236,13 +224,14 @@ export default {
   }
 }
 .player-list{
-  width: 100%;
-  overflow: auto;
-  .player-item{
-    width: 25vw;
-    display: inline-block;
-    padding: 2vw;
-  }
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(0,-50%);
+  overflow: visible;
+  height: 50px;
+  width: 25px;
+  z-index: 3;
 }
 .fiexd-msg-list{
   position: absolute;
@@ -255,6 +244,7 @@ export default {
   transition: all .5s;
   font-size: .9em;
 }
+
 .msg-auto-scroll{
   width: 10000%;
   margin-left: 80%;

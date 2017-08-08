@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="player-begin" :style="{width:containerPad+'px'}" v-if="isBegin">
-      <begin></begin>
+      <begin @game-over="gameOver" ref="begin"></begin>
     </div>
     <div class="chat-area">
       <chat showList="1"></chat>
@@ -107,9 +107,19 @@ export default {
     userLeave (uid) {
       let index = this.userList.findIndex(u => u.uid == uid)
       this.userList.splice(index,1)
+      this.isBegin&&this.$refs.begin.userOffline(uid)
     },
     leaveRoom () {
-      this.$router.replace({name:'roomlist'})
+      if(this.isBegin){
+        this.$messageBox.confirm('确定退出当前正在进行的游戏?').then(action => {
+          this.$router.replace({name:'roomlist'})
+        });
+      }else{
+        this.$router.replace({name:'roomlist'})
+      }
+    },
+    gameOver () {
+      this.isBegin = false
     }
   }
 }
@@ -140,6 +150,7 @@ export default {
   width: 400px;
   height: 100%;
   text-align: center;
+  overflow: hidden;
 }
 .player-list{
   li{
@@ -156,6 +167,10 @@ export default {
 .begin-btn{
   width: 200px;
   margin: auto;
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
 }
 .chat-area{
   height: 100%; 

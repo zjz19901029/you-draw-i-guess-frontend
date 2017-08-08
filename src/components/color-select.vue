@@ -12,9 +12,9 @@ export default {
     return {
       currentColor: 12,
       colors: [
-        '#F44336', '#E91E63', '#9C27B0', '#2196F3', '#48C6FF', '#4CAF50',
-        '#8BC34A', '#FFEB3B', '#FFC107', '#FF9800', '#795548', '#607D8B',
-        '#000', '#666', '#999', '#BBB', '#DDD', '#FFF'
+        '#F44336', '#E91E63', '#9C27B0', '#2196F3', '#4CAF50',
+        '#FFEB3B', '#FF9800', '#795548', '#607D8B',
+        '#000', '#BBB', '#FFF'
       ]
     }
   },
@@ -33,22 +33,22 @@ export default {
 
 <style lang="less">
 .color-select{
-  display: flex;
-  width: 100%;
-  flex-wrap: wrap;
-  padding: 5vw;
+  position: absolute;
+  top:30px;
+  right: 0;
+  width: 210px;
   padding-bottom: 0;
+  background: #fff;
+  box-shadow: 0 0 4px 1px #ccc; 
   &>div{
-    width: 100 / 6%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 5vw;
+    float: left;
+    width: 40px;
+    height: 40px;
+    padding: 10px;
   }
-  @item-size:10vw;
   .color-item{
-    width: @item-size;
-    height: @item-size;
+    width: 100%;
+    height: 100%;
     display: block;
     border-radius: 50%;
     &.selected{

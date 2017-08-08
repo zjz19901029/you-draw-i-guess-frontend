@@ -66,6 +66,7 @@ export default {
       }
     },
     enterServer () {
+      if(!this.selectedServer.host){return}
       this.$store.commit("setServerInfo",{
         host: this.selectedServer.host,
         port: this.selectedServer.clientPort,

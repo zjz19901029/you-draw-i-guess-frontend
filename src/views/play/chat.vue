@@ -66,7 +66,7 @@ export default {
     height: @children-height;
     padding: 0px 15px;
     width: 100%;
-    font-size: 14px;
+    font-size: 12px;
   }
   button{
     border-radius: 0;

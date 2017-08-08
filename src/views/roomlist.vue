@@ -27,7 +27,8 @@ export default {
         onServerLeave: this.userLeave,
         onRoomAdd: this.updateRoomAdd,
         onRoomLeave: this.updateRoomLeave,
-        onRoomStart: this.updateRoomStart
+        onRoomStart: this.updateRoomStart,
+        onRoomGameOver: this.updateRoomGameOver
       },
       roomList: [],
       userList: [],
@@ -89,6 +90,11 @@ export default {
     updateRoomStart (data) {
       if(this.roomList[data.roomId]){
         this.roomList[data.roomId].state = 1
+      }
+    },
+    updateRoomGameOver (data) {
+      if(this.roomList[data.roomId]){
+        this.roomList[data.roomId].state = 0
       }
     },
     refresh () {

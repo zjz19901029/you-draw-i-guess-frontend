@@ -1,31 +1,22 @@
 <template>
 <div class="draw-wrapper">
   <div class="draw-wrap">
-    <canvas @touchstart="start" @touchmove="move" @touchend="end" v-if="canDraw" ref="canvasDom">
+    <canvas @touchstart="start" @touchmove.prevent="move" @touchend="end" v-if="canDraw" ref="canvasDom">
     </canvas>
     <canvas v-else ref="canvasDom"></canvas>
     <slot name="ondraw"></slot>
-    <div class="operator-wrap" v-if="canDraw">
-      <color-select @select-color = "selectColor" v-show="selectColorShow"></color-select>
-      <line-select @select-line = "selectLine" v-show="selectLineShow" :color="setting.color"></line-select>
-    </div>
   </div>
-  <div class="operator-btns flex" v-if="canDraw">
-    <div @click="toggleSelectColor">
-      <div class="color" :style="{background: setting.color}"></div>
-    </div>
-    <div @click="toggleSelectLine">
-      <div class="line" :style="{height: setting.line + 'px', background: setting.color}"></div>
-      <div>{{setting.line}}</div>
+  <div class="operator-btns" v-if="canDraw">
+    <div>
+      <div class="color" :style="{background: setting.color,border: getBorder(setting.color)}" @click="toggleSelectColor"></div>
+      <color-select @select-color = "selectColor" v-show="selectColorShow"></color-select>
     </div>
     <div>
-      <div class="iconfont icon-weibiaoti545" @click="doAction('undo')"></div>
+      <div class="line" :style="{height: setting.line + 'px', background: setting.color,border: getBorder(setting.color)}" @click="toggleSelectLine"></div>
+      <line-select @select-line = "selectLine" v-show="selectLineShow" ></line-select>
     </div>
     <div>
-      <div class="iconfont icon-chexiao" @click="doAction('redo')"></div>
-    </div>
-    <div>
-      <div class="iconfont icon-shanchu" @click="clear"></div>
+      <div class="clear" @click="clear">clear</div>
     </div>
   </div>
 </div>
@@ -40,13 +31,13 @@ export default {
   data () {
     return {
       socketEvents: {
-        drawAction (data) {
+        onDrawAction (data) {
           if (!this.canDraw) {
             this.setting = data.setting
             this.doAction(data.actionName, data.data, false)
           }
         },
-        drawImage (data) {
+        onDrawImage (data) {
           if (!this.canDraw) {
             this.drawImage(data)
           }
@@ -82,18 +73,20 @@ export default {
       this.cxt = cxt
       this.countOffset(dom)
       this.saveData()
-      this.$watch('imageData', v => {
+      /*this.$watch('imageData', v => {
         this.$nextTick(_ => {
+          console.log(111111,v)
           if (v) {
             this.drawImage(v)
           } else {
             this.clearCanvas()
           }
         })
-      })
+      })*/
     })
   },
   watch: {
+
     setting: {
       handler (val) {
         this.cxt.lineWidth = val.line
@@ -122,7 +115,7 @@ export default {
       var img = new window.Image()
       img.onload = () => {
         this.clearCanvas()
-        this.cxt.drawImage(img, 0, 0)
+        this.cxt.drawImage(img, 0, 0, this.canvasWidth, this.canvasHeight)
       }
       img.src = data.dataUrl
     },
@@ -149,8 +142,16 @@ export default {
       this.setting.color = color
       this.selectColorShow = false
     },
-    draw ({ x, y }, type = 'start') {
+    getBorder (color) {
+      if (color === '#FFF') return '1px solid #ccc'
+      return ''
+    },
+    draw ({ x, y, width, height }, type = 'start') {
       let cxt = this.cxt
+      if(!this.canDraw){//需要按比例对坐标进行转换
+        x = this.canvasWidth/width*x
+        y = this.canvasHeight/height*y
+      }
       switch (type) {
         case 'start':
           cxt.beginPath()
@@ -194,12 +195,12 @@ export default {
       }
     },
     sendImage (data) {
-      this.canDraw && this.$webSocket.send({
+      this.canDraw && this.$store.state.pomelo.notify('room.roomHandler.drawImage',{
         dataUrl: data
-      }, 'drawImage')
+      })
     },
     sendAction (action) {
-      this.canDraw && this.$webSocket.send(action, 'drawAction')
+      this.canDraw && this.$store.state.pomelo.notify('room.roomHandler.drawAction',action)
     },
     clearCanvas () {
       this.cxt.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
@@ -219,7 +220,9 @@ export default {
       let touch = e.touches[0]
       let x = touch.clientX - this.offsetLeft
       let y = touch.clientY - this.offsetTop
-      return { x, y }
+      let width = this.canvasWidth
+      let height = this.canvasHeight
+      return { x, y, width, height }
     },
     start (e) {
       this.doAction('start', this.getPoint(e))
@@ -241,12 +244,21 @@ export default {
 /*@import "@/assets/css/iconfont/iconfont.css";*/
 @operator-color: #eee;
 .operator-btns{
-  padding: 5px 0;
+  height: 30px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2;
   &>div{
-    flex: 1;
+    height: 100%;
+    position: relative;
+    float: right;
+    width: 50px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    >div{
+      margin:auto;
+    }
   }
   .color{
     border-radius: 50%;
@@ -262,10 +274,13 @@ export default {
     font-size: 20px;
   }
 }
+.draw-wrapper{
+  height: 100%;
+}
 .draw-wrap{
   background: #fff;
   width: 100%;
-  height: 260px;
+  height: 100%;
   position: relative;
   .operator-wrap{
     box-shadow: 0 0 5vw #ccc;
