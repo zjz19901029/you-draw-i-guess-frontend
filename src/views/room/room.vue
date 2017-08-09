@@ -18,7 +18,7 @@
       <begin @game-over="gameOver" ref="begin"></begin>
     </div>
     <div class="chat-area">
-      <chat showList="1"></chat>
+      <chat showList="1" ></chat>
     </div>
   </div>
 </div>

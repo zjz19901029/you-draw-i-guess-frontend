@@ -34,7 +34,7 @@
     <div class="answer-card">
       <div class="quick-send">
         <p v-for="u,index in gameOverData">
-          第{{index+1}}名: {{u.username}} {{u.score}}分
+          第{{index+1}}名: {{u.name}} {{u.score}}分
         </p>
       </div>
     </div>
@@ -63,11 +63,12 @@ export default {
         onAnswerType (data) {
           this.typeName = data.type
         },
-        countScore (userScore) {
+        onAnswerRight (data) {
+          console.log(data)
           const players = this.gameData.players
           if (players) {
             players.forEach(u => {
-              u.score = userScore[u.id] || u.score
+              u.score = data[u.uid]||u.score
             })
           }
         },

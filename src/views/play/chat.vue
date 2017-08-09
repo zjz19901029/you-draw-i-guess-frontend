@@ -1,7 +1,7 @@
 <template>
 <div class="chat-input">
   <div class="msg-list" v-if="showList">
-    <p v-for="m in msgList" :class="{self:m.from.uid == userInfo.uid}">{{m.from.username}}说: {{m.msg}}</p>
+    <p v-for="m in msgList" :class="{self:m.from.uid == userInfo.uid,system:m.answerRight}"><span v-html="m.from.username"></span>: <span v-html="m.msg"></span></p>
   </div>
   <form @submit.prevent="sendMsg">
     <div class="input-group">
@@ -22,7 +22,11 @@ export default {
       userInfo: this.$store.state.userInfo,
       socketEvents: {
         onChat (data) {
-          this.$emit('receive', data)
+          console.log(data)
+          if(data.answerRight){
+            data.msg = `<em>${data.from.username}</em>猜对了答案  <em>+${data.score}</em>`
+            data.from.username = "系统"
+          }
           this.msgList.push(data)
         }
       }
@@ -101,6 +105,9 @@ form{
     word-break: break-all;
     &.self{
       color:#eb6325;
+    }
+    &.system{
+      color:#ff0000;
     }
   }
 }
