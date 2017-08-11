@@ -18,7 +18,7 @@
       <begin @game-over="gameOver" ref="begin"></begin>
     </div>
     <div class="chat-area">
-      <chat showList="1" ></chat>
+      <chat showList="1" ref="chat"></chat>
     </div>
   </div>
 </div>
@@ -102,11 +102,26 @@ export default {
       this.$store.state.pomelo.notify('connector.entryHandler.beginGame')
     },
     refreshUser (user) {
+      this.$refs.chat.showMsg({
+        system:true,
+        msg:`"${user.name}" 进入了房间`,
+        from:{
+          username:"系统"
+        }
+      })
       this.userList.push(user)
     },
     userLeave (uid) {
       let index = this.userList.findIndex(u => u.uid == uid)
+      var username = this.userList[index].name
       this.userList.splice(index,1)
+      this.$refs.chat.showMsg({
+        system:true,
+        msg:`"${username}" 离开了房间`,
+        from:{
+          username:"系统"
+        }
+      })
       this.isBegin&&this.$refs.begin.userOffline(uid)
     },
     leaveRoom () {

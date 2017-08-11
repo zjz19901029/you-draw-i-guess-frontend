@@ -1,7 +1,7 @@
 <template>
 <div class="chat-input">
   <div class="msg-list" v-if="showList">
-    <p v-for="m in msgList" :class="{self:m.from.uid == userInfo.uid,system:m.answerRight}"><span v-html="m.from.username"></span>: <span v-html="m.msg"></span></p>
+    <p v-for="m in msgList" :class="{self:m.from.uid == userInfo.uid,system:m.system}"><span v-html="m.from.username"></span>: <span v-html="m.msg"></span></p>
   </div>
   <form @submit.prevent="sendMsg">
     <div class="input-group">
@@ -24,6 +24,7 @@ export default {
         onChat (data) {
           console.log(data)
           if(data.answerRight){
+            data.system = true
             data.msg = `<em>${data.from.username}</em>猜对了答案  <em>+${data.score}</em>`
             data.from.username = "系统"
           }
@@ -44,6 +45,9 @@ export default {
       if (this.msg) {
         this.send(this.msg)
       }
+    },
+    showMsg (data) {
+      this.msgList.push(data)
     }
   },
   watch: {

@@ -64,7 +64,6 @@ export default {
           this.typeName = data.type
         },
         onAnswerRight (data) {
-          console.log(data)
           const players = this.gameData.players
           if (players) {
             players.forEach(u => {
@@ -73,16 +72,14 @@ export default {
           }
         },
         onThisOver (data) {
-          console.log(data)
           this.currentAnswer = data.gameData.answer.word
           this.isShowAnswerCard = true
         },
         onChangeGamer (data) {
-          console.log(data)
           this.isShowAnswerCard = false
           this.typeName = ''
           this.gameData.imageData = ''
-          this.$refs.draw.clear()
+          this.$refs.draw.reset()
           this.getGameData()
         },
         onGameOver (data) {

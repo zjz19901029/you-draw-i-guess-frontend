@@ -53,7 +53,7 @@ export default {
       historyIndex: -1,
       selectColorShow: false,
       selectLineShow: false,
-      setting: { color: '#000', line: 4 },
+      setting: { color: '#000', line: 2 },
       receiveMsg: true
     }
   },
@@ -235,6 +235,10 @@ export default {
     },
     clear () {
       this.doAction('clear')
+    },
+    reset () {
+      this.clear()
+      this.setting = { color: '#000', line: 2 }
     }
   }
 }
