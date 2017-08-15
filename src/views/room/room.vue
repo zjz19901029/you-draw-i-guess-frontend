@@ -113,8 +113,8 @@ export default {
     },
     userLeave (uid) {
       let index = this.userList.findIndex(u => u.uid == uid)
+      console.log(this.userList)
       var username = this.userList[index].name
-      this.userList.splice(index,1)
       this.$refs.chat.showMsg({
         system:true,
         msg:`"${username}" 离开了房间`,
@@ -122,6 +122,7 @@ export default {
           username:"系统"
         }
       })
+      this.userList.splice(index,1)
       this.isBegin&&this.$refs.begin.userOffline(uid)
     },
     leaveRoom () {
